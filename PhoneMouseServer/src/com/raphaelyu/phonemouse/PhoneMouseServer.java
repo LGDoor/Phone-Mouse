@@ -13,6 +13,7 @@ public class PhoneMouseServer {
     final static int MAX_PACKET_LENGTH = 32;
     final static byte PACKET_TYPE_DISCOVER = 0x1;
     final static byte PACKET_TYPE_REPLY = 0x2;
+    final static byte PACKET_TYPE_MOVE = 0x3;
 
     private static final PrintWriter STD_OUT = new PrintWriter(System.out, true);
     private static final PrintWriter STD_ERR = new PrintWriter(System.err, true);
@@ -28,7 +29,7 @@ public class PhoneMouseServer {
         }
 
         /**
-         * Reply to the Discover Packet.
+         * Receive the Discover packets and reply.
          */
         @Override
         public void run() {
