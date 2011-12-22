@@ -27,8 +27,17 @@ public class DiscoverTest {
             buf[0] = PhoneMouseServer.PACKET_TYPE_DISCOVER;
             socket.send(packet);
             socket.receive(packet);
+            if (packet.getLength() == 1) {
+                byte[] buffer = packet.getData();
+                if (buffer[0] != 0x2) {
+                    throw new Error();
+                }
+            } else {
+                throw new Error();
+            }
             socket.close();
         }
+        System.out.println("Test finished.");
     }
 
 }
