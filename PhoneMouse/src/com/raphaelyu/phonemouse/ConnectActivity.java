@@ -14,6 +14,6 @@ public class ConnectActivity extends Activity {
  * DISCOVER: "PHONEMOUSE"
  * REPLY: "HERE"
  * HEARTBEAT: X
- * MOVE: timestamp:4/8 pos_x:4 pos_y:4
+ * MOVE: timestamp:8 pos_x:4 pos_y:4
  */
 // TODO: Service
