@@ -13,8 +13,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.SocketChannel;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -49,13 +53,14 @@ public class PhoneMouseServer {
     }
 
     private class SocketThread extends Thread {
-        private DatagramSocket serverSocket;
-        private byte[] buffer;
+        private DatagramChannel mServerChannel;
+        private ByteBuffer buffer;
 
-        public SocketThread() throws SocketException {
+        public SocketThread() throws IOException {
             super("Receiver");
-            serverSocket = new DatagramSocket(PHONE_MOUSE_PORT);
-            buffer = new byte[MAX_PACKET_LENGTH];
+            mServerChannel = DatagramChannel.open();
+            mServerChannel.socket().bind(new InetSocketAddress(PHONE_MOUSE_PORT));
+            buffer = ByteBuffer.allocate(MAX_PACKET_LENGTH);
         }
 
         /**
@@ -64,27 +69,34 @@ public class PhoneMouseServer {
         @Override
         public void run() {
             while (true) {
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                buffer.clear();
+                SocketAddress addr;
                 try {
-                    DataInputStream in = new DataInputStream(new ByteArrayInputStream(buffer));
-                    serverSocket.receive(packet);
-                    if (packet.getLength() > 0) {
-                        byte type = in.readByte();
-                        SocketAddress addr = packet.getSocketAddress();
+                    addr = mServerChannel.receive(buffer);
+                    buffer.flip();
+                    if (buffer.limit() > 0) {
+                        byte type = buffer.get();
                         STD_OUT.print("received from: " + addr.toString());
                         switch (type) {
                         case PACKET_TYPE_DISCOVER:
                             STD_OUT.println(", type: DISCOVER");
-                            buffer[0] = PACKET_TYPE_REPLY;
+                            buffer.clear();
+                            buffer.put(PACKET_TYPE_REPLY);
+                            buffer.flip();
                             // DatagramPacket replyPacket = new
                             // DatagramPacket(buffer, 1, addr);
-                            serverSocket.send(packet);
+                            try {
+                                mServerChannel.send(buffer, addr);
+                            } catch (IOException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
                             break;
                         case PACKET_TYPE_MOVE:
                             STD_OUT.println(", type: MOVE");
-                            long timestamp = in.readLong();
-                            float moveX = in.readFloat();
-                            float moveY = in.readFloat();
+                            long timestamp = buffer.getLong();
+                            float moveX = buffer.getFloat();
+                            float moveY = buffer.getFloat();
                             Motion motion = new Motion(timestamp, moveX, moveY);
                             moves.offer(motion);
                             break;
@@ -93,7 +105,6 @@ public class PhoneMouseServer {
                             STD_OUT.println(", type: UNKNOWN, " + type);
                         }
                     }
-                    in.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -111,7 +122,7 @@ public class PhoneMouseServer {
         mMaxDistance = 100;
     }
 
-    public void start() throws SocketException, InterruptedException, AWTException {
+    public void start() throws InterruptedException, AWTException, IOException {
         init();
         SocketThread th = new SocketThread();
         th.start();
@@ -133,12 +144,11 @@ public class PhoneMouseServer {
 
     /**
      * @param args
-     * @throws SocketException
      * @throws InterruptedException
      * @throws AWTException
+     * @throws IOException
      */
-    public static void main(String[] args) throws SocketException, InterruptedException,
-            AWTException {
+    public static void main(String[] args) throws InterruptedException, AWTException, IOException {
         PhoneMouseServer server = new PhoneMouseServer();
         server.start();
     }
