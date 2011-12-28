@@ -145,7 +145,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
 
     private void sendMovePacket(float x, float y) {
         if (mServerAddr != null) {
-            mPacketBuffer.reset();
+            mPacketBuffer.clear();
             // ByteArrayOutputStream baos = new ByteArrayOutputStream();
             // DataOutputStream dos = new DataOutputStream(baos);
             try {
