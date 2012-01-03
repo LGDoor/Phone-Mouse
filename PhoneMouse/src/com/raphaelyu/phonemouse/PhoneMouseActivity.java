@@ -1,52 +1,32 @@
 package com.raphaelyu.phonemouse;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.Serializable;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.util.Arrays;
-
-import org.apache.http.util.ByteArrayBuffer;
 
 import com.raphaelyu.R;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.app.AlertDialog.Builder;
 import android.app.Dialog;
-import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.PointF;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.Message;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
@@ -57,12 +37,8 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
     final static int MAX_PACKET_LENGTH = 32;
     final static byte PACKET_TYPE_DISCOVER = 0x1;
     final static byte PACKET_TYPE_REPLY = 0x2;
-    final static byte PACKET_TYPE_MOVE = 0x3;
+    final static byte PACKET_TYPE_MOVE = 0x10;
     private static final float EPSILON = 0.00f;
-
-    // private float mPosX;
-
-    // private float mPosY;
 
     private float mLastX = 0.0f;
 
@@ -158,13 +134,6 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
     private void sendMovePacket(float x, float y) {
         if (mServerAddr != null) {
             mPacketBuffer.clear();
-            // ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            // DataOutputStream dos = new DataOutputStream(baos);
-            // dos.writeByte(PACKET_TYPE_MOVE);
-            // dos.writeLong(System.currentTimeMillis());
-            // dos.writeFloat(x);
-            // dos.writeFloat(y);
-            // dos.close();
             mPacketBuffer.put(PACKET_TYPE_MOVE);
             mPacketBuffer.putLong(System.currentTimeMillis());
             mPacketBuffer.putFloat(x);
@@ -177,13 +146,6 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-            // byte[] data = baos.toByteArray();
-            // DatagramSocket socket = new DatagramSocket();
-            // DatagramPacket packet = new DatagramPacket(data, data.length,
-            // mServerAddr);
-            // socket.send(packet);
-            // socket.close();
-
         }
     }
 

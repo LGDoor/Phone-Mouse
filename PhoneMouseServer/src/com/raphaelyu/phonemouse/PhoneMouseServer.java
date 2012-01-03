@@ -22,10 +22,9 @@ public class PhoneMouseServer {
     final static int MAX_PACKET_LENGTH = 32;
     final static byte PACKET_TYPE_DISCOVER = 0x1;
     final static byte PACKET_TYPE_REPLY = 0x2;
-    final static byte PACKET_TYPE_MOVE = 0x3;
+    final static byte PACKET_TYPE_MOVE = 0x10;
 
     private static final PrintWriter STD_OUT = new PrintWriter(System.out, true);
-    private static final PrintWriter STD_ERR = new PrintWriter(System.err, true);
 
     private BlockingQueue<Motion> moves = new ArrayBlockingQueue<Motion>(2000);
     private Robot mRobot;
@@ -77,8 +76,6 @@ public class PhoneMouseServer {
                             buffer.clear();
                             buffer.put(PACKET_TYPE_REPLY);
                             buffer.flip();
-                            // DatagramPacket replyPacket = new
-                            // DatagramPacket(buffer, 1, addr);
                             try {
                                 mServerChannel.send(buffer, addr);
                             } catch (IOException e) {
@@ -111,9 +108,9 @@ public class PhoneMouseServer {
         Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
         mScreenHeight = scrSize.height;
         mScreenWidth = scrSize.width;
+
         // 取屏幕长宽的最小值
         mMaxMotionDist = (mScreenHeight < mScreenWidth) ? mScreenHeight : mScreenWidth;
-        // mMaxDistance = 100;
     }
 
     public void start() throws InterruptedException, AWTException, IOException {
@@ -133,7 +130,6 @@ public class PhoneMouseServer {
                 lastTime = motion.timestamp;
             }
         }
-        // th.join();
     }
 
     /**
