@@ -1,0 +1,6 @@
+ 协议 定长
+type:1 byte
+ DISCOVER: 0x1 | nil
+ REPLY: 0x2 | nil
+ HEARTBEAT: 0x3 | nil (unimplemented)
+ MOVE: 0x10 | timestamp:8 | pos_x:4 | pos_y:4
