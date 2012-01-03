@@ -18,6 +18,8 @@ import java.util.concurrent.BlockingQueue;
 
 public class PhoneMouseServer {
 
+    final static boolean DEBUG_MODE = false;
+
     final static short PHONE_MOUSE_PORT = 5329;
     final static int MAX_PACKET_LENGTH = 32;
     final static byte PACKET_TYPE_DISCOVER = 0x1;
@@ -69,10 +71,10 @@ public class PhoneMouseServer {
                     buffer.flip();
                     if (buffer.limit() > 0) {
                         byte type = buffer.get();
-                        STD_OUT.print("received from: " + addr.toString());
+                        printLog("received from: " + addr.toString());
                         switch (type) {
                         case PACKET_TYPE_DISCOVER:
-                            STD_OUT.println(", type: DISCOVER");
+                            printlnLog(", type: DISCOVER");
                             buffer.clear();
                             buffer.put(PACKET_TYPE_REPLY);
                             buffer.flip();
@@ -84,7 +86,7 @@ public class PhoneMouseServer {
                             }
                             break;
                         case PACKET_TYPE_MOVE:
-                            STD_OUT.println(", type: MOVE");
+                            printlnLog(", type: MOVE");
                             long timestamp = buffer.getLong();
                             float moveX = buffer.getFloat();
                             float moveY = buffer.getFloat();
@@ -93,7 +95,7 @@ public class PhoneMouseServer {
                             break;
                         default:
                             // otherwise ignore the packet.
-                            STD_OUT.println(", type: UNKNOWN, " + type);
+                            printlnLog(", type: UNKNOWN, " + type);
                         }
                     }
                 } catch (IOException e) {
@@ -129,6 +131,18 @@ public class PhoneMouseServer {
                 }
                 lastTime = motion.timestamp;
             }
+        }
+    }
+
+    private void printLog(String str) {
+        if (DEBUG_MODE) {
+            STD_OUT.print(str);
+        }
+    }
+    
+    private void printlnLog(String str){
+        if (DEBUG_MODE) {
+            STD_OUT.println(str);
         }
     }
 
