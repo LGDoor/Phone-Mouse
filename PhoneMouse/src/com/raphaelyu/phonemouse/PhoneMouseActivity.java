@@ -8,6 +8,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
@@ -50,6 +51,8 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 public class PhoneMouseActivity extends Activity implements SensorEventListener {
+    final static boolean TEST_MODE = false;
+    final static String TEST_SERVER_IP = "192.168.1.5";
     final static short PHONE_MOUSE_PORT = 5329;
     final static int MAX_PACKET_LENGTH = 32;
     final static byte PACKET_TYPE_DISCOVER = 0x1;
@@ -106,6 +109,14 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
 
         @Override
         protected Void doInBackground(Void... params) {
+            // Test mode
+            // - specified server address
+
+            if (TEST_MODE) {
+                mServerAddr = new InetSocketAddress(TEST_SERVER_IP, PHONE_MOUSE_PORT);
+                return null;
+            }
+
             byte[] buf = new byte[1];
             InetAddress broadcastIP;
             try {
@@ -142,37 +153,37 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
     }
 
     private ByteBuffer mPacketBuffer = ByteBuffer.allocate(MAX_PACKET_LENGTH);
+    DatagramChannel mChannel;
 
     private void sendMovePacket(float x, float y) {
         if (mServerAddr != null) {
             mPacketBuffer.clear();
             // ByteArrayOutputStream baos = new ByteArrayOutputStream();
             // DataOutputStream dos = new DataOutputStream(baos);
-            try {
-                // dos.writeByte(PACKET_TYPE_MOVE);
-                // dos.writeLong(System.currentTimeMillis());
-                // dos.writeFloat(x);
-                // dos.writeFloat(y);
-                // dos.close();
-                mPacketBuffer.put(PACKET_TYPE_MOVE);
-                mPacketBuffer.putLong(System.currentTimeMillis());
-                mPacketBuffer.putFloat(x);
-                mPacketBuffer.putFloat(y);
-                mPacketBuffer.flip();
+            // dos.writeByte(PACKET_TYPE_MOVE);
+            // dos.writeLong(System.currentTimeMillis());
+            // dos.writeFloat(x);
+            // dos.writeFloat(y);
+            // dos.close();
+            mPacketBuffer.put(PACKET_TYPE_MOVE);
+            mPacketBuffer.putLong(System.currentTimeMillis());
+            mPacketBuffer.putFloat(x);
+            mPacketBuffer.putFloat(y);
+            mPacketBuffer.flip();
 
-                DatagramChannel channel = DatagramChannel.open();
-                channel.configureBlocking(false);
-                channel.send(mPacketBuffer, mServerAddr);
-                // byte[] data = baos.toByteArray();
-                // DatagramSocket socket = new DatagramSocket();
-                // DatagramPacket packet = new DatagramPacket(data, data.length,
-                // mServerAddr);
-                // socket.send(packet);
-                // socket.close();
-                channel.close();
-            } catch (Exception e) {
-                // TODO: handle exception
+            try {
+                mChannel.send(mPacketBuffer, mServerAddr);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
+            // byte[] data = baos.toByteArray();
+            // DatagramSocket socket = new DatagramSocket();
+            // DatagramPacket packet = new DatagramPacket(data, data.length,
+            // mServerAddr);
+            // socket.send(packet);
+            // socket.close();
+
         }
     }
 
@@ -209,6 +220,23 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
                 new DiscoverTask().execute();
             }
         });
+
+        try {
+            mChannel = DatagramChannel.open();
+            mChannel.configureBlocking(false);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        try {
+            mChannel.close();
+        } catch (IOException e) {
+        }
+        super.onDestroy();
     }
 
     @Override
@@ -235,7 +263,10 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
         boolean valuesUpdated = false;
         float values[] = event.values;
 
-        float newX = values[0] / 9.81f;
+        // 转动与移动镜面对称？
+        float newX = -values[0] / 9.81f;
+
+        // 世界坐标系Y轴正向与屏幕坐标系相反
         float newY = -values[1] / 9.81f;
 
         if (mTbSwitch.isChecked()) {
