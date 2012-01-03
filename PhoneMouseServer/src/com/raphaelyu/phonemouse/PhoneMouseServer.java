@@ -7,18 +7,12 @@ import java.awt.Point;
 import java.awt.PointerInfo;
 import java.awt.Robot;
 import java.awt.Toolkit;
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.nio.channels.SocketChannel;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -37,7 +31,7 @@ public class PhoneMouseServer {
     private Robot mRobot;
     private int mScreenWidth;
     private int mScreenHeight;
-    private int mMaxDistance;
+    private int mMaxMotionDist;
 
     private class Motion {
 
@@ -117,9 +111,9 @@ public class PhoneMouseServer {
         Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
         mScreenHeight = scrSize.height;
         mScreenWidth = scrSize.width;
-        // mMaxDistance = (mScreenHeight > mScreenWidth) ? mScreenHeight :
-        // mScreenWidth;
-        mMaxDistance = 100;
+        // 取屏幕长宽的最小值
+        mMaxMotionDist = (mScreenHeight < mScreenWidth) ? mScreenHeight : mScreenWidth;
+        // mMaxDistance = 100;
     }
 
     public void start() throws InterruptedException, AWTException, IOException {
@@ -133,8 +127,8 @@ public class PhoneMouseServer {
                 PointerInfo info = MouseInfo.getPointerInfo();
                 if (info != null) {
                     Point point = info.getLocation();
-                    mRobot.mouseMove((int) (motion.x * mMaxDistance) + point.x,
-                            (int) (motion.y * mMaxDistance) + point.y);
+                    mRobot.mouseMove((int) (motion.x * mMaxMotionDist) + point.x,
+                            (int) (motion.y * mMaxMotionDist) + point.y);
                 }
                 lastTime = motion.timestamp;
             }
