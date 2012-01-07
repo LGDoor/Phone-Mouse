@@ -47,7 +47,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
     final static byte PACKET_MOUSE_BUTTON_RIGHT = 2;
     final static byte PACKET_MOUSE_BUTTON_MIDDLE = 3;
 
-    private static final float EPSILON = 0.002f;
+    private static final float EPSILON = 0.0015f;
 
     private float mLastX = 0.0f;
 

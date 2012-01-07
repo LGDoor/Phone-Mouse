@@ -129,8 +129,8 @@ public class PhoneMouseServer {
         int screenHeight = scrSize.height;
         int screenWidth = scrSize.width;
 
-        // 取屏幕长宽的最小值
-        mMaxMotionDist = (screenHeight < screenWidth) ? screenHeight : screenWidth;
+        // 取屏幕长宽的最大值
+        mMaxMotionDist = (screenHeight > screenWidth) ? screenHeight : screenWidth;
     }
 
     public void start() throws InterruptedException, AWTException, IOException {
