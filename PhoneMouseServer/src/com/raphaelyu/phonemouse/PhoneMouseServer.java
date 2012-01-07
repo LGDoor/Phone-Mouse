@@ -7,18 +7,17 @@ import java.awt.Point;
 import java.awt.PointerInfo;
 import java.awt.Robot;
 import java.awt.Toolkit;
+import java.awt.event.InputEvent;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 public class PhoneMouseServer {
 
-    final static boolean DEBUG_MODE = true;
+    final static boolean DEBUG_MODE = false;
 
     /* 协议常量 */
     final static short PHONE_MOUSE_PORT = 5329;
@@ -28,10 +27,13 @@ public class PhoneMouseServer {
     final static byte PACKET_TYPE_MOVE = 0x10;
     final static byte PACKET_TYPE_PRESS = 0x11;
     final static byte PACKET_TYPE_RELEASE = 0x12;
+    final static byte PACKET_MOUSE_BUTTON_LEFT = 1;
+    final static byte PACKET_MOUSE_BUTTON_RIGHT = 2;
+    final static byte PACKET_MOUSE_BUTTON_MIDDLE = 3;
 
     private static final PrintWriter STD_OUT = new PrintWriter(System.out, true);
 
-    private EventQueue events = EventQueue.getInstance();
+    private EventQueue mEvents = EventQueue.getInstance();
     private Robot mRobot;
     private int mMaxMotionDist;
 
@@ -85,23 +87,28 @@ public class PhoneMouseServer {
                             float moveX = buffer.getFloat();
                             float moveY = buffer.getFloat();
                             MouseEvent event = MouseEvent.createMoveEvent(timestamp, moveX, moveY);
-                            events.offer(event);
+                            mEvents.offer(event);
                             break;
                         }
                         case PACKET_TYPE_PRESS: {
                             printlnLog(", type: PRESS");
                             long timestamp = buffer.getLong();
-                            int button = buffer.getInt();
-                            MouseEvent event = MouseEvent.createPressEvent(timestamp, button);
-                            events.offer(event);
+                            int button = convertButtonMask(buffer.getInt());
+                            if (button != -1) {
+                            MouseEvent event = MouseEvent.createPressEvent(timestamp,
+                                    button);
+                                mEvents.offer(event);
+                            }
                             break;
                         }
                         case PACKET_TYPE_RELEASE: {
                             printlnLog(", type: RELEASE");
                             long timestamp = buffer.getLong();
-                            int button = buffer.getInt();
+                            int button = convertButtonMask(buffer.getInt());
+                            if (button != -1) {
                             MouseEvent event = MouseEvent.createReleaseEvent(timestamp, button);
-                            events.offer(event);
+                                mEvents.offer(event);
+                            }
                             break;
                         }
                         default:
@@ -135,7 +142,7 @@ public class PhoneMouseServer {
         // 循环等待并处理接收到的事件
         while (true) {
             long lastTime = 0l;
-            MouseEvent event = events.take();
+            MouseEvent event = mEvents.take();
             if (event.timestamp > lastTime) {
                 lastTime = event.timestamp;
 
@@ -168,6 +175,26 @@ public class PhoneMouseServer {
     private void printlnLog(String str) {
         if (DEBUG_MODE) {
             STD_OUT.println(str);
+        }
+    }
+
+    /**
+     * Convert the button mask from that defined in the <b>protocal</b> to
+     * <b>awt</b>.
+     * 
+     * @param button
+     * @return -1 if can't convert.
+     */
+    public static int convertButtonMask(int button) {
+        switch (button) {
+        case PACKET_MOUSE_BUTTON_LEFT:
+            return InputEvent.BUTTON1_MASK;
+        case PACKET_MOUSE_BUTTON_RIGHT:
+            return InputEvent.BUTTON3_MASK;
+        case PACKET_MOUSE_BUTTON_MIDDLE:
+            return InputEvent.BUTTON3_DOWN_MASK;
+        default:
+            return -1;
         }
     }
 

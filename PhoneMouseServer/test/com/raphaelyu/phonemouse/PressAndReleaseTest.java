@@ -1,6 +1,5 @@
 package com.raphaelyu.phonemouse;
 
-import java.awt.event.InputEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -12,12 +11,12 @@ public class PressAndReleaseTest {
     public static void main(String[] args) throws IOException {
         DatagramSocket socket = new DatagramSocket();
 
-        // mouse down
+        // left button down
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream out = new DataOutputStream(baos);
         out.writeByte(PhoneMouseServer.PACKET_TYPE_PRESS);
         out.writeLong(System.currentTimeMillis());
-        out.writeInt(InputEvent.BUTTON1_MASK);
+        out.writeInt(PhoneMouseServer.PACKET_MOUSE_BUTTON_LEFT);
         byte buf[] = baos.toByteArray();
         DatagramPacket packet = new DatagramPacket(buf, buf.length, InetAddress.getLocalHost(),
                 PhoneMouseServer.PHONE_MOUSE_PORT);
@@ -37,12 +36,34 @@ public class PressAndReleaseTest {
             socket.send(packet);
         }
 
-        // mouse up
+        // left button up
         baos = new ByteArrayOutputStream();
         out = new DataOutputStream(baos);
         out.writeByte(PhoneMouseServer.PACKET_TYPE_RELEASE);
         out.writeLong(System.currentTimeMillis());
-        out.writeInt(InputEvent.BUTTON1_MASK);
+        out.writeInt(PhoneMouseServer.PACKET_MOUSE_BUTTON_LEFT);
+        buf = baos.toByteArray();
+        packet = new DatagramPacket(buf, buf.length, InetAddress.getLocalHost(),
+                PhoneMouseServer.PHONE_MOUSE_PORT);
+        socket.send(packet);
+
+        // right button up
+        baos = new ByteArrayOutputStream();
+        out = new DataOutputStream(baos);
+        out.writeByte(PhoneMouseServer.PACKET_TYPE_PRESS);
+        out.writeLong(System.currentTimeMillis());
+        out.writeInt(PhoneMouseServer.PACKET_MOUSE_BUTTON_RIGHT);
+        buf = baos.toByteArray();
+        packet = new DatagramPacket(buf, buf.length, InetAddress.getLocalHost(),
+                PhoneMouseServer.PHONE_MOUSE_PORT);
+        socket.send(packet);
+
+        // left button up
+        baos = new ByteArrayOutputStream();
+        out = new DataOutputStream(baos);
+        out.writeByte(PhoneMouseServer.PACKET_TYPE_RELEASE);
+        out.writeLong(System.currentTimeMillis());
+        out.writeInt(PhoneMouseServer.PACKET_MOUSE_BUTTON_RIGHT);
         buf = baos.toByteArray();
         packet = new DatagramPacket(buf, buf.length, InetAddress.getLocalHost(),
                 PhoneMouseServer.PHONE_MOUSE_PORT);

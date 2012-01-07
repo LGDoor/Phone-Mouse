@@ -24,13 +24,14 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.MotionEvent;
+import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.TextView;
 import android.widget.ToggleButton;
 
-public class PhoneMouseActivity extends Activity implements SensorEventListener {
+public class PhoneMouseActivity extends Activity implements SensorEventListener, OnTouchListener {
     final static boolean TEST_MODE = false;
     final static String TEST_SERVER_IP = "192.168.1.5";
 
@@ -42,6 +43,9 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
     final static byte PACKET_TYPE_MOVE = 0x10;
     final static byte PACKET_TYPE_PRESS = 0x11;
     final static byte PACKET_TYPE_RELEASE = 0x12;
+    final static byte PACKET_MOUSE_BUTTON_LEFT = 1;
+    final static byte PACKET_MOUSE_BUTTON_RIGHT = 2;
+    final static byte PACKET_MOUSE_BUTTON_MIDDLE = 3;
 
     private static final float EPSILON = 0.00f;
 
@@ -49,11 +53,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
 
     private float mLastY = 0.0f;
 
-    private TextView mTvAcceleration;
-
     private ToggleButton mTbSwitch;
-
-    private CoordinateView mVwCoordinate;
 
     private SensorManager mSensorManager;
 
@@ -61,9 +61,13 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
 
     private ViewGroup mLayoutNoServer;
 
-    private ViewGroup mLayoutControl;
+    private ViewGroup mLayoutMouse;
 
     private Button mBtnRetry;
+
+    private Button mBtnLeft;
+
+    private Button mBtnRight;
 
     private class DiscoverTask extends AsyncTask<Void, Void, Void> {
 
@@ -80,7 +84,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
         protected void onPostExecute(Void result) {
             super.onPostExecute(result);
             if (mServerAddr != null) {
-                mLayoutControl.setVisibility(View.VISIBLE);
+                mLayoutMouse.setVisibility(View.VISIBLE);
                 mLayoutNoServer.setVisibility(View.GONE);
             } else {
                 // TODO
@@ -136,7 +140,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
     private ByteBuffer mPacketBuffer = ByteBuffer.allocate(MAX_PACKET_LENGTH);
     DatagramChannel mChannel;
 
-    private void sendMovePacket(float x, float y) {
+    private void onMoveCommand(float x, float y) {
         if (mServerAddr != null) {
             mPacketBuffer.clear();
             mPacketBuffer.put(PACKET_TYPE_MOVE);
@@ -145,6 +149,36 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
             mPacketBuffer.putFloat(y);
             mPacketBuffer.flip();
 
+            sendPacket();
+        }
+    }
+
+    private void onPressCommand(int button) {
+        if (mServerAddr != null) {
+            mPacketBuffer.clear();
+            mPacketBuffer.put(PACKET_TYPE_PRESS);
+            mPacketBuffer.putLong(System.currentTimeMillis());
+            mPacketBuffer.putInt(button);
+            mPacketBuffer.flip();
+
+            sendPacket();
+        }
+    }
+
+    private void onReleaseCommand(int button) {
+        if (mServerAddr != null) {
+            mPacketBuffer.clear();
+            mPacketBuffer.put(PACKET_TYPE_RELEASE);
+            mPacketBuffer.putLong(System.currentTimeMillis());
+            mPacketBuffer.putInt(button);
+            mPacketBuffer.flip();
+
+            sendPacket();
+        }
+    }
+
+    private void sendPacket() {
+        if (mServerAddr != null) {
             try {
                 mChannel.send(mPacketBuffer, mServerAddr);
             } catch (IOException e) {
@@ -154,39 +188,11 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
         }
     }
 
-    private void onNewPosition(float x, float y) {
-        // update the UI
-        mVwCoordinate.setPosition((float) x, (float) y);
-        mTvAcceleration.setText(String.format("%.4f %.4f", x, y));
-        mVwCoordinate.invalidate();
-
-        sendMovePacket(x, y);
-    }
-
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
-
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        mBtnRetry = (Button) findViewById(R.id.btn_retry);
-        mVwCoordinate = (CoordinateView) findViewById(R.id.vw_coordinate);
-        mTvAcceleration = (TextView) findViewById(R.id.tv_acc);
-        mTbSwitch = (ToggleButton) findViewById(R.id.tb_switch);
-        mLayoutControl = (ViewGroup) findViewById(R.id.layout_control);
-        mLayoutNoServer = (ViewGroup) findViewById(R.id.layout_no_server);
-        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-
-        mTbSwitch.setChecked(false);
-        mLayoutControl.setVisibility(View.GONE);
-        mBtnRetry.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new DiscoverTask().execute();
-            }
-        });
+        createContentView();
 
         try {
             mChannel = DatagramChannel.open();
@@ -195,6 +201,31 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+
+    private void createContentView() {
+        setContentView(R.layout.main);
+
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        mBtnRetry = (Button) findViewById(R.id.btn_retry);
+        mBtnLeft = (Button) findViewById(R.id.btn_mouse_left);
+        mBtnRight = (Button) findViewById(R.id.btn_mouse_right);
+        mTbSwitch = (ToggleButton) findViewById(R.id.tb_switch);
+        mLayoutMouse = (ViewGroup) findViewById(R.id.layout_mouse);
+        mLayoutNoServer = (ViewGroup) findViewById(R.id.layout_no_server);
+        mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+
+        mTbSwitch.setChecked(false);
+        mLayoutMouse.setVisibility(View.GONE);
+        mBtnRetry.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new DiscoverTask().execute();
+            }
+        });
+        mBtnLeft.setOnTouchListener(this);
+        mBtnRight.setOnTouchListener(this);
     }
 
     @Override
@@ -251,11 +282,38 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
                 valuesUpdated = true;
             }
             if (valuesUpdated) {
-                onNewPosition(deltaX, deltaY);
+                onMoveCommand(deltaX, deltaY);
             }
         } else {
             mLastX = newX;
             mLastY = newY;
         }
+    }
+
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        if (mTbSwitch.isChecked()) {
+        int button = -1;
+        int action = event.getActionMasked();
+
+        switch (v.getId()) {
+        case R.id.btn_mouse_left:
+            button = PACKET_MOUSE_BUTTON_LEFT;
+            break;
+        case R.id.btn_mouse_right:
+            button = PACKET_MOUSE_BUTTON_RIGHT;
+            break;
+        }
+
+        switch (action) {
+        case MotionEvent.ACTION_DOWN:
+            onPressCommand(button);
+            break;
+        case MotionEvent.ACTION_UP:
+            onReleaseCommand(button);
+            break;
+            }
+        }
+        return false;
     }
 }
