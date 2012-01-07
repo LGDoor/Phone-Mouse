@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <string name="hello">Hello World, PhoneMouseActivity!</string>
-    <string name="app_name">PhoneMouse</string>
-
+    <string name="app_name">Phone Mouse</string>
+    <string name="searching">Searching...</string>
+    <string name="no_servers">No remote computer founded</string>
+    <string name="retry">Retry</string>
 </resources>

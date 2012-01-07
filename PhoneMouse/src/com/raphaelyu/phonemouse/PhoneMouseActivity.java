@@ -11,7 +11,7 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 
-import com.raphaelyu.R;
+import com.raphaelyu.phonemouse.R;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -79,7 +79,8 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
         protected void onPreExecute() {
             super.onPreExecute();
             mDialog = ProgressDialog
-                    .show(PhoneMouseActivity.this, null, "searching...", true, true);
+.show(PhoneMouseActivity.this, null,
+                    getString(R.string.searching), true, true);
         }
 
         @Override
@@ -319,7 +320,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
     public boolean onTouch(View v, MotionEvent event) {
         if (mTbSwitch.isChecked()) {
             int button = -1;
-            int action = event.getActionMasked();
+            int action = event.getAction();
 
             switch (v.getId()) {
             case R.id.btn_mouse_left:
