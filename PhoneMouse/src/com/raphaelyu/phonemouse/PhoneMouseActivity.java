@@ -47,7 +47,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
     final static byte PACKET_MOUSE_BUTTON_RIGHT = 2;
     final static byte PACKET_MOUSE_BUTTON_MIDDLE = 3;
 
-    private static final float EPSILON = 0.00f;
+    private static final float EPSILON = 0.002f;
 
     private float mLastX = 0.0f;
 
@@ -113,7 +113,9 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
                     DatagramPacket packet = new DatagramPacket(buf, buf.length, broadcastIP,
                             PHONE_MOUSE_PORT);
                     buf[0] = PACKET_TYPE_DISCOVER;
-                    socket.send(packet);
+                    for (int i = 0; i < 3; i++) {
+                        socket.send(packet);
+                    }
                     socket.receive(packet);
                     if (packet.getLength() == 1) {
                         byte[] buffer = packet.getData();
@@ -161,7 +163,10 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
             mPacketBuffer.putInt(button);
             mPacketBuffer.flip();
 
-            sendPacket();
+            for (int i = 0; i < 3; i++) {
+                sendPacket();
+                mPacketBuffer.rewind();
+            }
         }
     }
 
@@ -173,7 +178,10 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
             mPacketBuffer.putInt(button);
             mPacketBuffer.flip();
 
-            sendPacket();
+            for (int i = 0; i < 3; i++) {
+                sendPacket();
+                mPacketBuffer.rewind();
+            }
         }
     }
 
@@ -293,25 +301,25 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         if (mTbSwitch.isChecked()) {
-        int button = -1;
-        int action = event.getActionMasked();
+            int button = -1;
+            int action = event.getActionMasked();
 
-        switch (v.getId()) {
-        case R.id.btn_mouse_left:
-            button = PACKET_MOUSE_BUTTON_LEFT;
-            break;
-        case R.id.btn_mouse_right:
-            button = PACKET_MOUSE_BUTTON_RIGHT;
-            break;
-        }
+            switch (v.getId()) {
+            case R.id.btn_mouse_left:
+                button = PACKET_MOUSE_BUTTON_LEFT;
+                break;
+            case R.id.btn_mouse_right:
+                button = PACKET_MOUSE_BUTTON_RIGHT;
+                break;
+            }
 
-        switch (action) {
-        case MotionEvent.ACTION_DOWN:
-            onPressCommand(button);
-            break;
-        case MotionEvent.ACTION_UP:
-            onReleaseCommand(button);
-            break;
+            switch (action) {
+            case MotionEvent.ACTION_DOWN:
+                onPressCommand(button);
+                break;
+            case MotionEvent.ACTION_UP:
+                onReleaseCommand(button);
+                break;
             }
         }
         return false;
