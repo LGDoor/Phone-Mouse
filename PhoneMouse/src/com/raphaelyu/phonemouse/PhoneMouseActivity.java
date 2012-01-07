@@ -53,6 +53,8 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
 
     private float mLastY = 0.0f;
 
+    private boolean mPausing;
+
     private ToggleButton mTbSwitch;
 
     private SensorManager mSensorManager;
@@ -87,7 +89,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
                 mLayoutMouse.setVisibility(View.VISIBLE);
                 mLayoutNoServer.setVisibility(View.GONE);
             } else {
-                // TODO
+                mLayoutNoServer.setVisibility(View.VISIBLE);
             }
             mDialog.dismiss();
         }
@@ -186,7 +188,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
     }
 
     private void sendPacket() {
-        if (mServerAddr != null) {
+        if (mServerAddr != null && !mPausing) {
             try {
                 mChannel.send(mPacketBuffer, mServerAddr);
             } catch (IOException e) {
@@ -225,6 +227,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
         mTbSwitch.setChecked(false);
+        mLayoutNoServer.setVisibility(View.GONE);
         mLayoutMouse.setVisibility(View.GONE);
         mBtnRetry.setOnClickListener(new OnClickListener() {
             @Override
@@ -246,18 +249,32 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        new DiscoverTask().execute();
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
+        mPausing = false;
         mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY),
                 SensorManager.SENSOR_DELAY_GAME);
-        new DiscoverTask().execute();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        mTbSwitch.setChecked(false);
+        mPausing = true;
         mSensorManager.unregisterListener(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mTbSwitch.setChecked(false);
+        mLayoutMouse.setVisibility(View.GONE);
+        mLayoutNoServer.setVisibility(View.GONE);
     }
 
     @Override
