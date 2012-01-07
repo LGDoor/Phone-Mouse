@@ -3,6 +3,7 @@
     android:id="@+id/layout_mouse"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:background="@drawable/bg"
     android:orientation="vertical" >
 
     <LinearLayout
@@ -13,17 +14,22 @@
 
         <Button
             android:id="@+id/btn_mouse_left"
+            android:background="@drawable/btn_mouse"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="3" />
-        <ImageView
+
+        <ImageView
             android:id="@+id/btn_mouse_wheel"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1.5" />
+            android:layout_weight="1.5"
+            android:scaleType="fitXY"
+            android:src="@drawable/wheel" />
 
         <Button
             android:id="@+id/btn_mouse_right"
+            android:background="@drawable/btn_mouse"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_weight="1.8" />
@@ -32,16 +38,19 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
+        android:layout_weight="2"
         android:gravity="center_horizontal" >
 
         <ToggleButton
             android:id="@+id/tb_switch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="50dp"
-            android:height="70dp"
-            android:width="100dp" />
+            android:layout_marginTop="80dp"
+            android:background="@drawable/btn_switch"
+            android:height="0dp"
+            android:textOff=""
+            android:textOn=""
+            android:width="0dp" />
     </RelativeLayout>
 
 </LinearLayout>
