@@ -49,7 +49,11 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
 
     private float mLastY = 0.0f;
 
+    private TextView mTvAcceleration;
+
     private ToggleButton mTbSwitch;
+
+    private CoordinateView mVwCoordinate;
 
     private SensorManager mSensorManager;
 
@@ -57,7 +61,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
 
     private ViewGroup mLayoutNoServer;
 
-    private ViewGroup mLayoutMouse;
+    private ViewGroup mLayoutControl;
 
     private Button mBtnRetry;
 
@@ -76,7 +80,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
         protected void onPostExecute(Void result) {
             super.onPostExecute(result);
             if (mServerAddr != null) {
-                mLayoutMouse.setVisibility(View.VISIBLE);
+                mLayoutControl.setVisibility(View.VISIBLE);
                 mLayoutNoServer.setVisibility(View.GONE);
             } else {
                 // TODO
@@ -152,6 +156,10 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
 
     private void onNewPosition(float x, float y) {
         // update the UI
+        mVwCoordinate.setPosition((float) x, (float) y);
+        mTvAcceleration.setText(String.format("%.4f %.4f", x, y));
+        mVwCoordinate.invalidate();
+
         sendMovePacket(x, y);
     }
 
@@ -164,13 +172,15 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         mBtnRetry = (Button) findViewById(R.id.btn_retry);
+        mVwCoordinate = (CoordinateView) findViewById(R.id.vw_coordinate);
+        mTvAcceleration = (TextView) findViewById(R.id.tv_acc);
         mTbSwitch = (ToggleButton) findViewById(R.id.tb_switch);
-        mLayoutMouse = (ViewGroup) findViewById(R.id.layout_mouse);
+        mLayoutControl = (ViewGroup) findViewById(R.id.layout_control);
         mLayoutNoServer = (ViewGroup) findViewById(R.id.layout_no_server);
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
         mTbSwitch.setChecked(false);
-        mLayoutMouse.setVisibility(View.GONE);
+        mLayoutControl.setVisibility(View.GONE);
         mBtnRetry.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {

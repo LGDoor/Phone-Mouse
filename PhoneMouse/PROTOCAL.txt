@@ -15,5 +15,10 @@ definition of the packets:
 	REPLY: 0x2 | nil
 	HEARTBEAT: 0x3 | nil (unimplemented)
 	MOVE: 0x10 | timestamp:8 | pos_x:4 | pos_y:4
-	PRESS: 0x11 | timestamp:8 | button:4
-	RELEASE: 0x12 | timestamp:8 | button:4
+	PRESS: 0x11 | timestamp:8 | button:1
+	RELEASE: 0x12 | timestamp:8 | button:1
+	
+mouse buttons:
+	left := 1
+	right := 2
+	middle := 3
