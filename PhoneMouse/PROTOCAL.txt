@@ -1,6 +1,19 @@
- 协议 定长
-type:1 byte
- DISCOVER: 0x1 | nil
- REPLY: 0x2 | nil
- HEARTBEAT: 0x3 | nil (unimplemented)
- MOVE: 0x10 | timestamp:8 | pos_x:4 | pos_y:4
+Fixed header length protocal in UDP
+
+port:5329
+max length:64 bytes
+
+header:
+	type: 1 byte
+
+
+definition of the packets:
+
+	( type: header | body:length )
+	
+	DISCOVER: 0x1 | nil (broadcast)
+	REPLY: 0x2 | nil
+	HEARTBEAT: 0x3 | nil (unimplemented)
+	MOVE: 0x10 | timestamp:8 | pos_x:4 | pos_y:4
+	PRESS: 0x11 | timestamp:8 | button:4
+	RELEASE: 0x12 | timestamp:8 | button:4

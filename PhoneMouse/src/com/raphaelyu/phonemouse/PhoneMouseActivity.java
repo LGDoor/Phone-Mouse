@@ -33,11 +33,16 @@ import android.widget.ToggleButton;
 public class PhoneMouseActivity extends Activity implements SensorEventListener {
     final static boolean TEST_MODE = false;
     final static String TEST_SERVER_IP = "192.168.1.5";
+
+    /* 协议常量 */
     final static short PHONE_MOUSE_PORT = 5329;
-    final static int MAX_PACKET_LENGTH = 32;
+    final static int MAX_PACKET_LENGTH = 64;
     final static byte PACKET_TYPE_DISCOVER = 0x1;
     final static byte PACKET_TYPE_REPLY = 0x2;
     final static byte PACKET_TYPE_MOVE = 0x10;
+    final static byte PACKET_TYPE_PRESS = 0x11;
+    final static byte PACKET_TYPE_RELEASE = 0x12;
+
     private static final float EPSILON = 0.00f;
 
     private float mLastX = 0.0f;
