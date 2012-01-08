@@ -43,20 +43,17 @@ public class PhoneMouseServer {
      * 
      * @author LGDoor
      */
-    private class SocketThread extends Thread {
+    private class PacketThread extends Thread {
         private DatagramChannel mServerChannel;
         private ByteBuffer buffer;
 
-        public SocketThread() throws IOException {
+        public PacketThread() throws IOException {
             super("Receiver");
             mServerChannel = DatagramChannel.open();
             mServerChannel.socket().bind(new InetSocketAddress(PHONE_MOUSE_PORT));
             buffer = ByteBuffer.allocate(MAX_PACKET_LENGTH);
         }
 
-        /**
-         * Receive the Discover packets and reply.
-         */
         @Override
         public void run() {
             while (true) {
@@ -134,11 +131,14 @@ public class PhoneMouseServer {
     }
 
     public void start() throws InterruptedException, AWTException, IOException {
+        STD_OUT.println("Initializing...");
         init();
 
-        SocketThread th = new SocketThread();
+        STD_OUT.println("Starting packet dispatcher...");
+        PacketThread th = new PacketThread();
         th.start();
 
+        STD_OUT.println("The Phone Mouse Server is started!");
         // 循环等待并处理接收到的事件
         while (true) {
             long lastTime = 0l;
