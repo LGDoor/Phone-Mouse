@@ -14,24 +14,35 @@ import java.nio.channels.DatagramChannel;
 import com.raphaelyu.phonemouse.R;
 
 import android.app.Activity;
+import android.app.AlertDialog.Builder;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.app.Dialog;
+import android.content.DialogInterface;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.InputType;
+import android.text.method.KeyListener;
+import android.text.method.NumberKeyListener;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.MotionEvent;
 import android.view.View.OnTouchListener;
+import android.view.KeyEvent;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
-public class PhoneMouseActivity extends Activity implements SensorEventListener, OnTouchListener {
+public class PhoneMouseActivity extends Activity implements SensorEventListener, OnTouchListener,
+        OnClickListener {
     final static boolean TEST_MODE = false;
     final static String TEST_SERVER_IP = "192.168.1.5";
 
@@ -67,9 +78,13 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
 
     private Button mBtnRetry;
 
-    private Button mBtnLeft;
+    private Button mBtnManual;
 
-    private Button mBtnRight;
+    private View mBtnLeft;
+
+    private View mBtnRight;
+
+    private EditText mEtIpAddr;
 
     private class DiscoverTask extends AsyncTask<Void, Void, Void> {
 
@@ -78,8 +93,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            mDialog = ProgressDialog
-.show(PhoneMouseActivity.this, null,
+            mDialog = ProgressDialog.show(PhoneMouseActivity.this, null,
                     getString(R.string.searching), true, true);
         }
 
@@ -87,9 +101,10 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
         protected void onPostExecute(Void result) {
             super.onPostExecute(result);
             if (mServerAddr != null) {
-                mLayoutMouse.setVisibility(View.VISIBLE);
                 mLayoutNoServer.setVisibility(View.GONE);
+                mLayoutMouse.setVisibility(View.VISIBLE);
             } else {
+                mLayoutMouse.setVisibility(View.GONE);
                 mLayoutNoServer.setVisibility(View.VISIBLE);
             }
             mDialog.dismiss();
@@ -220,8 +235,9 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         mBtnRetry = (Button) findViewById(R.id.btn_retry);
-        mBtnLeft = (Button) findViewById(R.id.btn_mouse_left);
-        mBtnRight = (Button) findViewById(R.id.btn_mouse_right);
+        mBtnManual = (Button) findViewById(R.id.btn_manual);
+        mBtnLeft = (View) findViewById(R.id.btn_mouse_left);
+        mBtnRight = (View) findViewById(R.id.btn_mouse_right);
         mTbSwitch = (ToggleButton) findViewById(R.id.tb_switch);
         mLayoutMouse = (ViewGroup) findViewById(R.id.layout_mouse);
         mLayoutNoServer = (ViewGroup) findViewById(R.id.layout_no_server);
@@ -230,12 +246,8 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
         mTbSwitch.setChecked(false);
         mLayoutNoServer.setVisibility(View.GONE);
         mLayoutMouse.setVisibility(View.GONE);
-        mBtnRetry.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new DiscoverTask().execute();
-            }
-        });
+        mBtnRetry.setOnClickListener(this);
+        mBtnManual.setOnClickListener(this);
         mBtnLeft.setOnTouchListener(this);
         mBtnRight.setOnTouchListener(this);
     }
@@ -341,5 +353,66 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
             }
         }
         return false;
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+        case R.id.btn_retry:
+            new DiscoverTask().execute();
+            break;
+        case R.id.btn_manual:
+            Builder builder = new Builder(this);
+            builder.setTitle("IP");
+            mEtIpAddr = new EditText(this);
+            mEtIpAddr.setKeyListener(new NumberKeyListener() {
+                public int getInputType() {
+                    return InputType.TYPE_CLASS_NUMBER;
+                }
+
+                protected char[] getAcceptedChars() {
+                    return new char[] {
+                            '0',
+                            '1',
+                            '2',
+                            '3',
+                            '4',
+                            '5',
+                            '6',
+                            '7',
+                            '8',
+                            '9',
+                            '.' };
+                }
+            });
+            builder.setView(mEtIpAddr);
+            builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    String ip = mEtIpAddr.getText().toString();
+                    if (ip.equals("")) {
+                        return;
+                    }
+                    try {
+                        mServerAddr = new InetSocketAddress(Inet4Address.getByName(ip),
+                                PHONE_MOUSE_PORT);
+                        dialog.dismiss();
+                        mLayoutNoServer.setVisibility(View.GONE);
+                        mLayoutMouse.setVisibility(View.VISIBLE);
+                    } catch (UnknownHostException e) {
+                        Toast.makeText(PhoneMouseActivity.this, R.string.invalid_addr,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+            builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+            builder.show();
+            // mLayoutMouse.setVisibility(View.GONE);
+            // mLayoutNoServer.setVisibility(View.VISIBLE);
+            break;
+        }
     }
 }
