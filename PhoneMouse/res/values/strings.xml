@@ -3,7 +3,7 @@
 
     <string name="app_name">Phone Mouse</string>
     <string name="searching">Searching...</string>
-    <string name="no_servers">No remote computer founded</string>
+    <string name="no_servers">No remote computers founded</string>
     <string name="retry">Retry</string>
     <string name="manually">Manually</string>
     <string name="or">or</string>

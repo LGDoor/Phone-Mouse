@@ -25,6 +25,10 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
+import android.os.Message;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.method.KeyListener;
@@ -58,7 +62,15 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
     final static byte PACKET_MOUSE_BUTTON_RIGHT = 2;
     final static byte PACKET_MOUSE_BUTTON_MIDDLE = 3;
 
-    private static final float EPSILON = 0.0015f;
+    private static final int MSG_MOVE_COMMAND = 1;
+    private static final int MSG_PRESS_COMMAND = 2;
+    private static final int MSG_RELEASE_COMMAND = 3;
+    private static final int MSG_WHEEL_COMMAND = 4;
+
+    private static final float EPSILON_ACCELEROMETER = 0.02f;
+    private static final float EPSILON_GRAVITY = 0.0015f;
+
+    private float mEpsilon;
 
     private float mLastX = 0.0f;
 
@@ -85,6 +97,90 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
     private View mBtnRight;
 
     private EditText mEtIpAddr;
+
+    private Handler mSocketHandler;
+
+    DatagramChannel mSocketChannel;
+
+    private Sensor mSensor;
+
+    private final class CommandHandler extends Handler {
+        private CommandHandler(Looper looper) {
+            super(looper);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+            case MSG_MOVE_COMMAND:
+                float pos[] = (float[]) msg.obj;
+                onMoveCommand(pos[0], pos[1]);
+                break;
+            case MSG_PRESS_COMMAND:
+                onPressCommand(msg.arg1);
+                break;
+            case MSG_RELEASE_COMMAND:
+                onReleaseCommand(msg.arg1);
+                break;
+            }
+        }
+
+        private void onMoveCommand(float x, float y) {
+            if (mServerAddr != null) {
+                mPacketBuffer.clear();
+                mPacketBuffer.put(PACKET_TYPE_MOVE);
+                mPacketBuffer.putLong(System.currentTimeMillis());
+                mPacketBuffer.putFloat(x);
+                mPacketBuffer.putFloat(y);
+                mPacketBuffer.flip();
+
+                sendPacket();
+            }
+        }
+
+        private void onPressCommand(int button) {
+            if (mServerAddr != null) {
+                mPacketBuffer.clear();
+                mPacketBuffer.put(PACKET_TYPE_PRESS);
+                mPacketBuffer.putLong(System.currentTimeMillis());
+                mPacketBuffer.putInt(button);
+                mPacketBuffer.flip();
+
+                for (int i = 0; i < 3; i++) {
+                    sendPacket();
+                    mPacketBuffer.rewind();
+                }
+            }
+        }
+
+        private void onReleaseCommand(int button) {
+            if (mServerAddr != null) {
+                mPacketBuffer.clear();
+                mPacketBuffer.put(PACKET_TYPE_RELEASE);
+                mPacketBuffer.putLong(System.currentTimeMillis());
+                mPacketBuffer.putInt(button);
+                mPacketBuffer.flip();
+
+                for (int i = 0; i < 3; i++) {
+                    sendPacket();
+                    mPacketBuffer.rewind();
+                }
+            }
+        }
+
+        private void sendPacket() {
+            if (mServerAddr != null && !mPausing) {
+                try {
+                    mSocketChannel.send(mPacketBuffer, mServerAddr);
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        private ByteBuffer mPacketBuffer = ByteBuffer.allocate(MAX_PACKET_LENGTH);
+    }
 
     private class DiscoverTask extends AsyncTask<Void, Void, Void> {
 
@@ -157,72 +253,20 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
         }
     }
 
-    private ByteBuffer mPacketBuffer = ByteBuffer.allocate(MAX_PACKET_LENGTH);
-    DatagramChannel mChannel;
-
-    private void onMoveCommand(float x, float y) {
-        if (mServerAddr != null) {
-            mPacketBuffer.clear();
-            mPacketBuffer.put(PACKET_TYPE_MOVE);
-            mPacketBuffer.putLong(System.currentTimeMillis());
-            mPacketBuffer.putFloat(x);
-            mPacketBuffer.putFloat(y);
-            mPacketBuffer.flip();
-
-            sendPacket();
-        }
-    }
-
-    private void onPressCommand(int button) {
-        if (mServerAddr != null) {
-            mPacketBuffer.clear();
-            mPacketBuffer.put(PACKET_TYPE_PRESS);
-            mPacketBuffer.putLong(System.currentTimeMillis());
-            mPacketBuffer.putInt(button);
-            mPacketBuffer.flip();
-
-            for (int i = 0; i < 3; i++) {
-                sendPacket();
-                mPacketBuffer.rewind();
-            }
-        }
-    }
-
-    private void onReleaseCommand(int button) {
-        if (mServerAddr != null) {
-            mPacketBuffer.clear();
-            mPacketBuffer.put(PACKET_TYPE_RELEASE);
-            mPacketBuffer.putLong(System.currentTimeMillis());
-            mPacketBuffer.putInt(button);
-            mPacketBuffer.flip();
-
-            for (int i = 0; i < 3; i++) {
-                sendPacket();
-                mPacketBuffer.rewind();
-            }
-        }
-    }
-
-    private void sendPacket() {
-        if (mServerAddr != null && !mPausing) {
-            try {
-                mChannel.send(mPacketBuffer, mServerAddr);
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-    }
-
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         createContentView();
 
+        HandlerThread thread = new HandlerThread("Socket Thread");
+        thread.start();
+
+        mSocketHandler = new CommandHandler(thread.getLooper());
+
         try {
-            mChannel = DatagramChannel.open();
-            mChannel.configureBlocking(false);
+            mSocketChannel = DatagramChannel.open();
+            mSocketChannel.configureBlocking(false);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -250,12 +294,24 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
         mBtnManual.setOnClickListener(this);
         mBtnLeft.setOnTouchListener(this);
         mBtnRight.setOnTouchListener(this);
+
+        chooseSensor();
+    }
+
+    // 优先使用GRAVITY Sensor
+    private void chooseSensor() {
+        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
+        mEpsilon = EPSILON_GRAVITY;
+        if (mSensor == null) {
+            mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            mEpsilon = EPSILON_ACCELEROMETER;
+        }
     }
 
     @Override
     protected void onDestroy() {
         try {
-            mChannel.close();
+            mSocketChannel.close();
         } catch (IOException e) {
         }
         super.onDestroy();
@@ -271,8 +327,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
     protected void onResume() {
         super.onResume();
         mPausing = false;
-        mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY),
-                SensorManager.SENSOR_DELAY_GAME);
+        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_GAME);
     }
 
     @Override
@@ -300,27 +355,31 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
         float values[] = event.values;
 
         // 转动与移动镜面对称？
-        float newX = -values[0] / 9.81f;
+        float newX = -values[0];
 
         // 世界坐标系Y轴正向与屏幕坐标系相反
-        float newY = -values[1] / 9.81f;
+        float newY = -values[1];
 
         if (mTbSwitch.isChecked()) {
             // 过滤传感器的误差
             float deltaX = 0f;
             float deltaY = 0f;
-            if (Math.abs(newX - mLastX) > EPSILON) {
+            if (Math.abs(newX - mLastX) > mEpsilon) {
                 deltaX = newX - mLastX;
                 mLastX = newX;
                 valuesUpdated = true;
             }
-            if (Math.abs(newY - mLastY) > EPSILON) {
+            if (Math.abs(newY - mLastY) > mEpsilon) {
                 deltaY = newY - mLastY;
                 mLastY = newY;
                 valuesUpdated = true;
             }
             if (valuesUpdated) {
-                onMoveCommand(deltaX, deltaY);
+                float pos[] = {
+                        deltaX,
+                        deltaY };
+                Message msg = mSocketHandler.obtainMessage(MSG_MOVE_COMMAND, pos);
+                mSocketHandler.sendMessage(msg);
             }
         } else {
             mLastX = newX;
@@ -331,24 +390,28 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         if (mTbSwitch.isChecked()) {
-            int button = -1;
+            Message msg = mSocketHandler.obtainMessage();
             int action = event.getAction();
 
             switch (v.getId()) {
             case R.id.btn_mouse_left:
-                button = PACKET_MOUSE_BUTTON_LEFT;
+                msg.arg1 = PACKET_MOUSE_BUTTON_LEFT;
                 break;
             case R.id.btn_mouse_right:
-                button = PACKET_MOUSE_BUTTON_RIGHT;
+                msg.arg1 = PACKET_MOUSE_BUTTON_RIGHT;
                 break;
+            default:
+                return false;
             }
 
             switch (action) {
             case MotionEvent.ACTION_DOWN:
-                onPressCommand(button);
+                msg.what = MSG_PRESS_COMMAND;
+                mSocketHandler.sendMessage(msg);
                 break;
             case MotionEvent.ACTION_UP:
-                onReleaseCommand(button);
+                msg.what = MSG_RELEASE_COMMAND;
+                mSocketHandler.sendMessage(msg);
                 break;
             }
         }

@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">无线鼠标</string>
     <string name="searching">搜索中...</string>
-    <string name="no_servers">无法找到可控制的电脑</string>
+    <string name="no_servers">未找到可控制的电脑</string>
     <string name="retry">重试</string>
     <string name="manually">手动输入</string>
     <string name="or">或</string>
