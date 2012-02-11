@@ -20,6 +20,7 @@ public class PhoneMouseServer {
     final static boolean DEBUG_MODE = false;
 
     /* 协议常量 */
+    final static int PROTOCAL_VERSION = 2;
     final static short PHONE_MOUSE_PORT = 5329;
     final static int MAX_PACKET_LENGTH = 64;
     final static byte PACKET_TYPE_DISCOVER = 0x1;
@@ -68,14 +69,19 @@ public class PhoneMouseServer {
                         switch (type) {
                         case PACKET_TYPE_DISCOVER:
                             printlnLog(", type: DISCOVER");
-                            buffer.clear();
-                            buffer.put(PACKET_TYPE_REPLY);
-                            buffer.flip();
-                            try {
-                                mServerChannel.send(buffer, addr);
-                            } catch (IOException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
+                            if (buffer.hasRemaining()) {
+                                byte ver = buffer.get();
+                                buffer.clear();
+                                if (PROTOCAL_VERSION >= ver) {
+                                    buffer.put(PACKET_TYPE_REPLY);
+                                    buffer.flip();
+                                    try {
+                                        mServerChannel.send(buffer, addr);
+                                    } catch (IOException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }
+                                }
                             }
                             break;
                         case PACKET_TYPE_MOVE: {
@@ -92,8 +98,7 @@ public class PhoneMouseServer {
                             long timestamp = buffer.getLong();
                             int button = convertButtonMask(buffer.getInt());
                             if (button != -1) {
-                            MouseEvent event = MouseEvent.createPressEvent(timestamp,
-                                    button);
+                                MouseEvent event = MouseEvent.createPressEvent(timestamp, button);
                                 mEvents.offer(event);
                             }
                             break;
@@ -103,7 +108,7 @@ public class PhoneMouseServer {
                             long timestamp = buffer.getLong();
                             int button = convertButtonMask(buffer.getInt());
                             if (button != -1) {
-                            MouseEvent event = MouseEvent.createReleaseEvent(timestamp, button);
+                                MouseEvent event = MouseEvent.createReleaseEvent(timestamp, button);
                                 mEvents.offer(event);
                             }
                             break;

@@ -1,5 +1,7 @@
 Fixed header length protocal in UDP
 
+version: 2
+
 port:5329
 max length:64 bytes
 
@@ -11,7 +13,7 @@ definition of the packets:
 
 	( type: header | body:length )
 	
-	DISCOVER: 0x1 | nil (broadcast)
+	DISCOVER: 0x1 | ver:1 (broadcast)
 	REPLY: 0x2 | nil
 	HEARTBEAT: 0x3 | nil (unimplemented)
 	MOVE: 0x10 | timestamp:8 | pos_x:4 | pos_y:4

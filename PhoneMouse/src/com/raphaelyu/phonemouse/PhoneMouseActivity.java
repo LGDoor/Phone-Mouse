@@ -51,6 +51,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
     final static String TEST_SERVER_IP = "192.168.1.5";
 
     /* 协议常量 */
+    final static int PROTOCAL_VERSION = 2;
     final static short PHONE_MOUSE_PORT = 5329;
     final static int MAX_PACKET_LENGTH = 64;
     final static byte PACKET_TYPE_DISCOVER = 0x1;
@@ -216,7 +217,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
                 return null;
             }
 
-            byte[] buf = new byte[1];
+            byte[] buf = new byte[2];
             InetAddress broadcastIP;
             try {
                 broadcastIP = Inet4Address.getByName("255.255.255.255");
@@ -227,6 +228,7 @@ public class PhoneMouseActivity extends Activity implements SensorEventListener,
                     DatagramPacket packet = new DatagramPacket(buf, buf.length, broadcastIP,
                             PHONE_MOUSE_PORT);
                     buf[0] = PACKET_TYPE_DISCOVER;
+                    buf[1] = PROTOCAL_VERSION;
                     for (int i = 0; i < 3; i++) {
                         socket.send(packet);
                     }

@@ -13,15 +13,16 @@ public class DiscoverTest {
      * @throws IOException
      */
     public static void main(String[] args) throws IOException {
-        byte[] buf = new byte[1];
+        byte[] buf = new byte[2];
         InetAddress broadcastIP = Inet4Address.getByName("255.255.255.255");
 
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 10; i++) {
             DatagramSocket socket = new DatagramSocket();
             socket.setSoTimeout(5000);
             DatagramPacket packet = new DatagramPacket(buf, buf.length, broadcastIP,
                     PhoneMouseServer.PHONE_MOUSE_PORT);
             buf[0] = PhoneMouseServer.PACKET_TYPE_DISCOVER;
+            buf[1] = 1;
             socket.send(packet);
             socket.receive(packet);
             if (packet.getLength() == 1) {
