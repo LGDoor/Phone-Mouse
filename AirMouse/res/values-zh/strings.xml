@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<resources>
+    <string name="app_name">空中鼠标</string>
+    <string name="searching">搜索中...</string>
+    <string name="no_servers">未找到可控制的电脑</string>
+    <string name="retry">重试</string>
+    <string name="manually">手动输入</string>
+    <string name="or">或</string>
+    <string name="ok">确定</string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
+    <string name="invalid_addr">无效的地址</string>
+    <string name="about">关于</string>
+    <string name="exit">退出</string>
+    <string name="about_content">版本 %s\n\n作者 Raphael Yu\n\n邮箱: yyddxxmm@gmail.com\n\n更多信息及问题请访问http://code.google.com/p/air-mouse-android/</string>
+</resources>

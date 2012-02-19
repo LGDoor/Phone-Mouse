@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<resources>
+    <string name="app_name">Air Mouse</string>
+    <string name="searching">Searching...</string>
+    <string name="no_servers">No remote computers founded</string>
+    <string name="retry">Retry</string>
+    <string name="manually">Manually</string>
+    <string name="or">or</string>
+    <string name="ok">OK</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="invalid_addr">Invalid address</string>
+    <string name="about">About</string>
+    <string name="exit">Exit</string>
+    <string name="about_content">Ver %s\n\nBy Raphael Yu\n\nMail: yyddxxmm@gmail.com\n\nMore information and questions please visit http://code.google.com/p/air-mouse-android/</string>
+</resources>
